@@ -1,0 +1,952 @@
+import "Mods\LineFollower4"
+
+@kB = 0
+@kC = 0
+
+
+@SeenBlackMin = 67
+@SeenBlackMax = 100
+
+kp_align = 2
+kd_align = 9
+
+
+@kp_sync = 2.0
+@TurnRatio = 2.4
+
+@LineBasePower = 25
+@LineKp = 0.55
+@LineKi = 0.02
+@LineKd = 1.20
+@LineThreshold = 50
+@MarkThreshold = 70
+@LineCrossActive = 3
+@LinePairMode = 0
+@LineMarkConfirmLoops = 3
+@SeenBlackMin = 85
+@SeenBlackMax = 100
+
+@StopSignal = 0
+@AsyncPort = "A"
+@AsyncSpeed = 0
+@AsyncDeg = 0
+
+@HoldAEnabled = 0
+@HoldDEnabled = 0
+@HoldARunning = 0
+@HoldDRunning = 0
+@HoldATarget = 0
+@HoldDTarget = 0
+@HoldAKp = 2.0
+@HoldDKp = 2.0
+
+Function LargeBase()
+  @kB = 1
+  @kC = 1
+  LineFollower4.SetMotorSigns(@kB, @kC)
+EndFunction
+
+Function MiddleBase()
+  @kB = -1
+  @kC = 1
+  LineFollower4.SetMotorSigns(@kB, @kC)
+EndFunction
+
+Function Check()
+  If @kB = 0 Or @kC = 0 Then
+    Speaker.Note(100, "C5", 500)
+    LCD.Clear()
+    LCD.Write(10, 10, "ERROR: Base not set!")
+    Program.End()
+  EndIf
+EndFunction
+
+Function Stop()
+  Motor.Stop("BC", "True")
+EndFunction
+
+Function InitLine4(in number sensorMode, in number s1Black, in number s1White, in number s2Black, in number s2White, in number s3Black, in number s3White, in number s4Black, in number s4White)
+  LineFollower4.Config(sensorMode)
+  LineFollower4.ConfigSensorBW(1, s1Black, s1White)
+  LineFollower4.ConfigSensorBW(2, s2Black, s2White)
+  LineFollower4.ConfigSensorBW(3, s3Black, s3White)
+  LineFollower4.ConfigSensorBW(4, s4Black, s4White)
+  LineFollower4.SetCenterPair(4, 2)
+  LineFollower4.SetLeftPair(2, 3)
+  LineFollower4.SetRightPair(1, 4)
+  LineFollower4.SetWeights(-150, -50, 50, 150)
+  LineFollower4.SetThreshold(@LineThreshold)
+  LineFollower4.SetMarkThreshold(@MarkThreshold)
+  LineFollower4.SetILimit(200)
+  LineFollower4.SetMotorSigns(@kB, @kC)
+  LineFollower4.ResetPID()
+EndFunction
+
+Function InitLine4BW(in number sensorMode, in number s1Black, in number s1White, in number s2Black, in number s2White, in number s3Black, in number s3White, in number s4Black, in number s4White)
+  InitLine4(sensorMode, s1Black, s1White, s2Black, s2White, s3Black, s3White, s4Black, s4White)
+EndFunction
+
+Function InitLine4RGBW(in number s1BlackR, in number s1BlackG, in number s1BlackB, in number s1WhiteR, in number s1WhiteG, in number s1WhiteB, in number s2BlackR, in number s2BlackG, in number s2BlackB, in number s2WhiteR, in number s2WhiteG, in number s2WhiteB, in number s3BlackR, in number s3BlackG, in number s3BlackB, in number s3WhiteR, in number s3WhiteG, in number s3WhiteB, in number s4BlackR, in number s4BlackG, in number s4BlackB, in number s4WhiteR, in number s4WhiteG, in number s4WhiteB)
+  LineFollower4.ConfigRGBW()
+  LineFollower4.ConfigSensorRGBW(1, s1BlackR, s1BlackG, s1BlackB, s1WhiteR, s1WhiteG, s1WhiteB)
+  LineFollower4.ConfigSensorRGBW(2, s2BlackR, s2BlackG, s2BlackB, s2WhiteR, s2WhiteG, s2WhiteB)
+  LineFollower4.ConfigSensorRGBW(3, s3BlackR, s3BlackG, s3BlackB, s3WhiteR, s3WhiteG, s3WhiteB)
+  LineFollower4.ConfigSensorRGBW(4, s4BlackR, s4BlackG, s4BlackB, s4WhiteR, s4WhiteG, s4WhiteB)
+  LineFollower4.SetCenterPair(4, 2)
+  LineFollower4.SetLeftPair(2, 3)
+  LineFollower4.SetRightPair(1, 4)
+  LineFollower4.SetWeights(-150, -50, 50, 150)
+  LineFollower4.SetThreshold(@LineThreshold)
+  LineFollower4.SetMarkThreshold(@MarkThreshold)
+  LineFollower4.SetILimit(200)
+  LineFollower4.SetMotorSigns(@kB, @kC)
+  LineFollower4.ResetPID()
+EndFunction
+
+Function SetLineTunings(in number basePower, in number kp, in number kd)
+  @LineBasePower = basePower
+  @LineKp = kp
+  @LineKi = 0
+  @LineKd = kd
+EndFunction
+
+Function SetLinePID(in number basePower, in number kp, in number ki, in number kd)
+  @LineBasePower = basePower
+  @LineKp = kp
+  @LineKi = ki
+  @LineKd = kd
+EndFunction
+
+Function SetLineThreshold(in number threshold)
+  @LineThreshold = threshold
+  LineFollower4.SetThreshold(threshold)
+EndFunction
+
+Function SetMarkThreshold(in number threshold)
+  @MarkThreshold = threshold
+  LineFollower4.SetMarkThreshold(threshold)
+EndFunction
+
+Function SetMarkConfirmLoops(in number confirmLoops)
+  @LineMarkConfirmLoops = confirmLoops
+EndFunction
+
+Function SetSeenBlackRange(in number minValue, in number maxValue)
+  @SeenBlackMin = minValue
+  @SeenBlackMax = maxValue
+EndFunction
+
+Function SetLineIntegralLimit(in number iLimit)
+  LineFollower4.SetILimit(iLimit)
+EndFunction
+
+Function SetLineWeights(in number w1, in number w2, in number w3, in number w4)
+  LineFollower4.SetWeights(w1, w2, w3, w4)
+EndFunction
+
+Function SetLineCombos(in number centerP1, in number centerP2, in number leftP1, in number leftP2, in number rightP1, in number rightP2)
+  LineFollower4.SetCenterPair(centerP1, centerP2)
+  LineFollower4.SetLeftPair(leftP1, leftP2)
+  LineFollower4.SetRightPair(rightP1, rightP2)
+  LineFollower4.ResetPID()
+EndFunction
+
+Function UseCenterPair()
+  @LinePairMode = 0
+  LineFollower4.ResetPID()
+EndFunction
+
+Function UseMiddlePair()
+  UseCenterPair()
+EndFunction
+
+Function UseLeftPair()
+  @LinePairMode = 1
+  LineFollower4.ResetPID()
+EndFunction
+
+Function UseRightPair()
+  @LinePairMode = 2
+  LineFollower4.ResetPID()
+EndFunction
+
+Function SetLinePairMode(in number pairMode)
+  @LinePairMode = pairMode
+  LineFollower4.ResetPID()
+EndFunction
+
+Function ReadLinePair(out number leftSensor, out number rightSensor, out number position, out string found)
+  LineFollower4.getPairValues(@LinePairMode, leftSensor, rightSensor, position, found)
+EndFunction
+
+Function ReadLine(out number s1, out number s2, out number s3, out number s4, out number position, out number active)
+  LineFollower4.getAll(s1, s2, s3, s4)
+  LineFollower4.getPairValues(@LinePairMode, leftSensor, rightSensor, position, found)
+  LineFollower4.getActiveCount(active)
+EndFunction
+
+Function ReadMarkLevels(out number leftAvg, out number centerAvg, out number rightAvg)
+  LineFollower4.getPairAverages(leftAvg, centerAvg, rightAvg)
+EndFunction
+
+Function CaptureBlackRGBW()
+  LineFollower4.CaptureBlackRGBW()
+EndFunction
+
+Function CaptureWhiteRGBW()
+  LineFollower4.CaptureWhiteRGBW()
+EndFunction
+
+Function ReadRGBWPort(in number port, out number r, out number g, out number b, out number w)
+  LineFollower4.getRGBWByPort(port, r, g, b, w)
+EndFunction
+
+Function ReadBlackRGBWCal(in number port, out number r, out number g, out number b, out number w)
+  LineFollower4.getBlackRGBWByPort(port, r, g, b, w)
+EndFunction
+
+Function ReadWhiteRGBWCal(in number port, out number r, out number g, out number b, out number w)
+  LineFollower4.getWhiteRGBWByPort(port, r, g, b, w)
+EndFunction
+
+Function IsGLeft(out string result)
+  LineFollower4.isGLeft(result)
+EndFunction
+
+Function IsGRight(out string result)
+  LineFollower4.isGRight(result)
+EndFunction
+
+Function IsTLine(out string result)
+  LineFollower4.isTLine(result)
+EndFunction
+
+Function FollowLineStep()
+  Check()
+  LineFollower4.SetMotorSigns(@kB, @kC)
+  LineFollower4.FollowPIDPair(@LinePairMode, @LineBasePower, @LineKp, @LineKi, @LineKd, turn, position, found)
+EndFunction
+
+Function FollowLineMs(in number runtimeMs)
+  Check()
+  LineFollower4.SetMotorSigns(@kB, @kC)
+  LineFollower4.ResetPID()
+  
+  start = Time.Get1()
+  exit = 0
+  
+  While exit = 0
+    If @StopSignal = 1 Then
+      exit = 1
+    EndIf
+    
+    LineFollower4.FollowPIDPair(@LinePairMode, @LineBasePower, @LineKp, @LineKi, @LineKd, turn, position, found)
+    
+    If Time.Get1() - start >= runtimeMs Then
+      exit = 1
+    EndIf
+    
+    Program.Delay(10)
+  EndWhile
+  Stop()
+EndFunction
+
+Function FollowLineUntilCross(in number minActive)
+  Check()
+  LineFollower4.SetMotorSigns(@kB, @kC)
+  LineFollower4.ResetPID()
+  
+  exit = 0
+  While exit = 0
+    If @StopSignal = 1 Then
+      exit = 1
+    EndIf
+    
+    LineFollower4.FollowPIDPair(@LinePairMode, @LineBasePower, @LineKp, @LineKi, @LineKd, turn, position, found)
+    LineFollower4.getActiveCount(active)
+    
+    If active >= minActive Then
+      exit = 1
+    EndIf
+    
+    Program.Delay(10)
+  EndWhile
+  Stop()
+EndFunction
+
+Function SoloL(in number spd,in number DestEnc)
+  Motor.Stop("BC", "true")
+  StartB = MotorB.GetTacho()
+  exit=0
+   While exit=0
+    MotorB.StartPower((spd) * @kB)
+    encB = MotorB.GetTacho() - StartB
+    avg = Math.Abs(encB) 
+    If avg >= DestEnc Then
+      exit = 1
+    EndIf
+    
+  EndWhile
+  
+EndFunction
+
+  
+
+Function SoloR(in number spd,in number DestEnc)
+    Motor.Stop("BC", "true")
+
+   StartC = MotorC.GetTacho()
+  exit=0
+   While exit=0
+        MotorC.StartPower((spd) * @kC)
+
+    encC = MotorC.GetTacho() - StartC
+    avg = Math.Abs(encC)
+    If avg >= DestEnc Then
+      exit = 1
+    EndIf
+    
+  EndWhile
+  
+
+EndFunction
+
+Function FollowLineUntilLost(in number lostLoops)
+  Check()
+  LineFollower4.SetMotorSigns(@kB, @kC)
+  LineFollower4.ResetPID()
+  
+  lostCounter = 0
+  exit = 0
+  
+  While exit = 0
+    If @StopSignal = 1 Then
+      exit = 1
+    EndIf
+    
+    LineFollower4.FollowPIDPair(@LinePairMode, @LineBasePower, @LineKp, @LineKi, @LineKd, turn, position, found)
+    
+    If found = "False" Then
+      lostCounter = lostCounter + 1
+    Else
+      lostCounter = 0
+    EndIf
+    
+    If lostCounter >= lostLoops Then
+      exit = 1
+    EndIf
+    
+    Program.Delay(10)
+  EndWhile
+  Stop()
+EndFunction
+
+Function CenterOnLine(in number holdMs)
+  Check()
+  LineFollower4.SetMotorSigns(@kB, @kC)
+  LineFollower4.ResetPID()
+  
+  start = Time.Get1()
+  exit = 0
+  While exit = 0
+    If @StopSignal = 1 Then
+      exit = 1
+    EndIf
+    
+    LineFollower4.FollowPIDPair(@LinePairMode, 0, @LineKp, @LineKi, @LineKd, turn, position, found)
+    
+    If Time.Get1() - start >= holdMs Then
+      exit = 1
+    EndIf
+    
+    Program.Delay(10)
+  EndWhile
+  Stop()
+EndFunction
+
+Function FollowUntilGLeft()
+  FollowUntilGLeftCount(1)
+EndFunction
+
+Function FollowUntilGRight()
+  FollowUntilGRightCount(1)
+EndFunction
+
+Function FollowUntilTLine()
+  FollowUntilTCount(1)
+EndFunction
+
+Function FollowUntilGLeftCount(in number targetCount)
+  Check()
+  LineFollower4.SetMotorSigns(@kB, @kC)
+  LineFollower4.ResetPID()
+  
+  hitCount = 0
+  confirmCounter = 0
+  wasOn = 0
+  exit = 0
+  
+  While exit = 0
+    If @StopSignal = 1 Then
+      exit = 1
+    EndIf
+    
+    LineFollower4.FollowPIDPair(@LinePairMode, @LineBasePower, @LineKp, @LineKi, @LineKd, turn, position, found)
+    LineFollower4.isGLeft(markNow)
+    
+    If markNow = "True" Then
+      confirmCounter = confirmCounter + 1
+      If confirmCounter >= @LineMarkConfirmLoops Then
+        If wasOn = 0 Then
+          hitCount = hitCount + 1
+          wasOn = 1
+        EndIf
+      EndIf
+    Else
+      confirmCounter = 0
+      wasOn = 0
+    EndIf
+    
+    If hitCount >= targetCount Then
+      exit = 1
+    EndIf
+    
+    Program.Delay(10)
+  EndWhile
+  Stop()
+EndFunction
+
+Function FollowUntilGRightCount(in number targetCount)
+  Check()
+  LineFollower4.SetMotorSigns(@kB, @kC)
+  LineFollower4.ResetPID()
+  
+  hitCount = 0
+  confirmCounter = 0
+  wasOn = 0
+  exit = 0
+  
+  While exit = 0
+    If @StopSignal = 1 Then
+      exit = 1
+    EndIf
+    
+    LineFollower4.FollowPIDPair(@LinePairMode, @LineBasePower, @LineKp, @LineKi, @LineKd, turn, position, found)
+    LineFollower4.isGRight(markNow)
+    
+    If markNow = "True" Then
+      confirmCounter = confirmCounter + 1
+      If confirmCounter >= @LineMarkConfirmLoops Then
+        If wasOn = 0 Then
+          hitCount = hitCount + 1
+          wasOn = 1
+        EndIf
+      EndIf
+    Else
+      confirmCounter = 0
+      wasOn = 0
+    EndIf
+    
+    If hitCount >= targetCount Then
+      exit = 1
+    EndIf
+    
+    Program.Delay(10)
+  EndWhile
+  Stop()
+EndFunction
+speed = 50
+DestEnc = 180
+curr_speed = 30
+@avgs=0
+@integral=0
+kp_line = 0.5
+kd_line = 5
+ki_line = 0.01
+@prevEnc = 0
+@prevTime = 0
+OldE = 0
+s1exists = "true"
+s2exists = "true"
+s3exists = "true"
+s4exists = "true"
+
+Function SmoothSpeed()
+  max_speed = @speed
+  If @curr_speed < max_speed Then
+    If @prevTime = 0 Then
+      @prevTime = Time.Get2()
+    EndIf
+    If @prevEnc = 0 Then
+      encB = MotorB.GetTacho()
+      encC = MotorC.GetTacho()
+      @prevEnc = (Math.Abs(encB) + Math.Abs(encC))/2
+    EndIf
+    delta_time = Time.Get2() - @prevTime
+    If delta_time > 10 Then
+      encB = MotorB.GetTacho()
+      encC = MotorC.GetTacho()
+      enc = (Math.Abs(encB) + Math.Abs(encC))/2
+      delta_enc = enc - @prevEnc
+      If delta_enc > @DestEnc Then
+        delta_enc = @DestEnc
+      EndIf
+      delta_speed = delta_enc * max_speed / @DestEnc
+      If delta_speed < 1 Then
+        delta_speed = 1 ' избавляемся от замкнутого круга приращений нуля
+      EndIf
+      @curr_speed += delta_speed
+      ' Заполняем предыдущие значения
+      @prevTime = Time.Get2()
+      @prevEnc = enc
+    EndIf
+  Else
+    @curr_speed = max_speed
+  EndIf
+EndFunction
+
+function reg()
+  If @s2exists = "true" Then
+    @s2 = Sensor.ReadPercent(4)
+  Else
+    @s2 = @avgS
+  EndIf
+  If @s4exists = "true" Then
+    @s4 = Sensor.ReadPercent(2)
+  Else
+    @s4 = @avgS
+  EndIf
+  E = @s2 - @s4
+  P = E * @kp_line
+  I = @integral + (E * @ki_line)
+  D = (E - @OldE) * @kd_line
+  A = P + I + D
+  @OldE = E
+  integral = I
+  SmoothSpeed()
+ 
+  MotorB.StartPower((@curr_speed + A) * @kB)
+  MotorC.StartPower((@curr_speed - A) * @kC)
+EndFunction
+
+
+Function LineX()
+  Check()
+  @OldE = 0
+  exit = 0
+  While exit = 0
+    reg()
+    ' остановка на Х-перекрёстке: оба датчика видят маленькое значения яркости
+    If @s2 < 15 And @s4 < 15 Then
+      exit = 1
+    EndIf
+  EndWhile
+EndFunction
+
+Function FollowUntilTCount(in number targetCount)
+  Check()
+  LineFollower4.SetMotorSigns(@kB, @kC)
+  LineFollower4.ResetPID()
+  
+  hitCount = 0
+  confirmCounter = 0
+  wasOn = 0
+  exit = 0
+  
+  While exit = 0
+    If @StopSignal = 1 Then
+      exit = 1
+    EndIf
+    
+    LineFollower4.FollowPIDPair(@LinePairMode, @LineBasePower, @LineKp, @LineKi, @LineKd, turn, position, found)
+    LineFollower4.isTLine(markNow)
+    
+    If markNow = "True" Then
+      confirmCounter = confirmCounter + 1
+      If confirmCounter >= @LineMarkConfirmLoops Then
+        If wasOn = 0 Then
+          hitCount = hitCount + 1
+          wasOn = 1
+        EndIf
+      EndIf
+    Else
+      confirmCounter = 0
+      wasOn = 0
+    EndIf
+    
+    If hitCount >= targetCount Then
+      exit = 1
+    EndIf
+    
+    Program.Delay(10)
+  EndWhile
+  Stop()
+EndFunction
+
+Sub _HoldASub
+  @HoldARunning = 1
+  While @HoldAEnabled = 1
+    Error = @HoldATarget - Motor.GetCount("A")
+    Power = Error * @HoldAKp
+    
+    If Power > 50 Then
+      Power = 50
+    ElseIf Power < -50 Then
+      Power = -50
+    EndIf
+    
+    Motor.StartPower("A", Power)
+    Program.Delay(10)
+  EndWhile
+  @HoldARunning = 0
+EndSub
+
+Function nazad(in number power, in number DestEnc)
+    Check() ' Проверка конфигурации базы
+
+    ' --- Инициализация для этого конкретного движения ---
+    StartB = MotorB.GetTacho()          ' Начальное положение B
+    StartC = MotorC.GetTacho()          ' Начальное положение C
+    @OldE = 0                           ' Сброс предыдущей ОШИБКИ ВЫРАВНИВАНИЯ
+    ' Базовая мощность для движения назад (делаем отрицательной)
+    baseBackwardPower = Math.Abs(power) * -1
+
+    ' Используем While "True" и Break для цикла
+    While "True"
+        ' --- Расчет пройденного пути каждым мотором ---
+        encB = MotorB.GetTacho() - StartB
+        encC = MotorC.GetTacho() - StartC
+
+        ' --- ПД-регулятор ВЫРАВНИВАНИЯ ---
+        ' Расчет ошибки выравнивания (так же, как для vpered)
+        E = encC * @kC - encB * @kB
+        ' Расчет P и D компонент (ИСПОЛЬЗУЕМ _align коэффициенты!)
+        P = E * @kp_align
+        D = (E - @OldE) * @kd_align
+        ' Расчет корректирующего воздействия
+        A = P + D
+        ' Обновление предыдущей ошибки для следующей итерации
+        @OldE = E
+
+        ' --- Применение мощности к моторам для движения НАЗАД ---
+        ' Базовая ОТРИЦАТЕЛЬНАЯ мощность +/- коррекция (A)
+        powerB = baseBackwardPower + A
+        powerC = baseBackwardPower - A
+        ' Ограничение мощности [-100, 100]
+        powerB = Math.Min(100, Math.Max(-100, powerB))
+        powerC = Math.Min(100, Math.Max(-100, powerC))
+        ' Установка мощности
+        MotorB.StartPower(powerB * @kB)
+        MotorC.StartPower(powerC * @kC)
+
+        ' --- Расчет среднего пройденного расстояния (по модулю) ---
+        avg = (Math.Abs(encB) + Math.Abs(encC))/2
+
+        ' --- Проверка условия выхода ---
+        If avg >= DestEnc Then ' Используем >= для надежности остановки
+          Break ' Выход из цикла While
+        EndIf
+
+        ' --- Thread.Yield() НЕ ДОБАВЛЕН (по вашей инструкции) ---
+
+    EndWhile ' Конец цикла While
+
+    ' --- Stop() НЕ ДОБАВЛЕН (по вашей инструкции) ---
+    ' !!! ПОМНИТЕ: Моторы продолжат вращаться с последней заданной мощностью !!!
+    ' !!! Вы должны вызвать Stop() в основном коде СРАЗУ после вызова nazad !!!
+
+EndFunction
+
+
+Sub _HoldDSub
+  @HoldDRunning = 1
+  While @HoldDEnabled = 1
+    Error = @HoldDTarget - Motor.GetCount("D")
+    Power = Error * @HoldDKp
+    
+    If Power > 100 Then
+      Power = 100
+    ElseIf Power < -100 Then
+      Power = -100
+    EndIf
+    
+    Motor.StartPower("D", Power)
+    Program.Delay(10)
+  EndWhile
+  @HoldDRunning = 0
+EndSub
+
+Function ReadLinePort(in number port, out number value)
+  LineFollower4.getNormByPort(port, value)
+EndFunction
+
+Function FollowUntilGLeftNear()
+  FollowUntilGLeftByPortCount(1, 2)
+EndFunction
+
+Function FollowUntilGRightNear()
+  FollowUntilGRightByPortCount(1, 4)
+EndFunction
+
+Function FollowUntilGLeftByPortCount(in number targetCount, in number confirmPort)
+  Check()
+  LineFollower4.SetMotorSigns(@kB, @kC)
+  LineFollower4.ResetPID()
+  
+  hitCount = 0
+  confirmCounter = 0
+  wasOn = 0
+  exit = 0
+  
+  While exit = 0
+    If @StopSignal = 1 Then
+      exit = 1
+    EndIf
+    
+    LineFollower4.FollowPIDPair(@LinePairMode, @LineBasePower, @LineKp, @LineKi, @LineKd, turn, position, found)
+    LineFollower4.isGLeft(markNow)
+    LineFollower4.getNormByPort(confirmPort, confirmValue)
+    
+    If markNow = "True" And confirmValue >= @SeenBlackMin And confirmValue <= @SeenBlackMax Then
+      confirmCounter = confirmCounter + 1
+      If confirmCounter >= @LineMarkConfirmLoops Then
+        If wasOn = 0 Then
+          hitCount = hitCount + 1
+          wasOn = 1
+        EndIf
+      EndIf
+    Else
+      confirmCounter = 0
+      wasOn = 0
+    EndIf
+    
+    If hitCount >= targetCount Then
+      exit = 1
+    EndIf
+    
+    Program.Delay(10)
+  EndWhile
+  Stop()
+EndFunction
+
+Function FollowUntilGRightByPortCount(in number targetCount, in number confirmPort)
+  Check()
+  LineFollower4.SetMotorSigns(@kB, @kC)
+  LineFollower4.ResetPID()
+  
+  hitCount = 0
+  confirmCounter = 0
+  wasOn = 0
+  exit = 0
+  
+  While exit = 0
+    If @StopSignal = 1 Then
+      exit = 1
+    EndIf
+    
+    LineFollower4.FollowPIDPair(@LinePairMode, @LineBasePower, @LineKp, @LineKi, @LineKd, turn, position, found)
+    LineFollower4.isGRight(markNow)
+    LineFollower4.getNormByPort(confirmPort, confirmValue)
+    
+    If markNow = "True" And confirmValue >= @SeenBlackMin And confirmValue <= @SeenBlackMax Then
+      confirmCounter = confirmCounter + 1
+      If confirmCounter >= @LineMarkConfirmLoops Then
+        If wasOn = 0 Then
+          hitCount = hitCount + 1
+          wasOn = 1
+        EndIf
+      EndIf
+    Else
+      confirmCounter = 0
+      wasOn = 0
+    EndIf
+    
+    If hitCount >= targetCount Then
+      exit = 1
+    EndIf
+    
+    Program.Delay(10)
+  EndWhile
+  Stop()
+EndFunction
+
+
+Function ReleaseMotorPID(in string Port)
+  If Port = "A" Then
+    @HoldAEnabled = 0
+    If @HoldARunning = 1 Then
+      Program.Delay(20)
+    EndIf
+  ElseIf Port = "D" Then
+    @HoldDEnabled = 0
+    If @HoldDRunning = 1 Then
+      Program.Delay(20)
+    EndIf
+  EndIf
+EndFunction
+
+Function MotorHoldPIDTarget(in string Port, in number TargetDeg, in number kp_hold)
+  If Port = "A" Then
+    @HoldATarget = TargetDeg
+    @HoldAKp = kp_hold
+    @HoldAEnabled = 1
+    If @HoldARunning = 0 Then
+      Thread.Run = _HoldASub
+    EndIf
+  ElseIf Port = "D" Then
+    @HoldDTarget = TargetDeg
+    @HoldDKp = kp_hold
+    @HoldDEnabled = 1
+    If @HoldDRunning = 0 Then
+      Thread.Run = _HoldDSub
+    EndIf
+  EndIf
+EndFunction
+
+Function MotorHoldPID(in string Port)
+  If Port = "A" Then
+    MotorHoldPIDTarget("A", Motor.GetCount("A"), 2.0)
+  ElseIf Port = "D" Then
+    MotorHoldPIDTarget("D", Motor.GetCount("D"), 2.0)
+  EndIf
+EndFunction
+
+Function MotorPower(in string Port, in number Power)
+  ReleaseMotorPID(Port)
+  Motor.StartPower(Port, Power)
+EndFunction
+
+Function StopMotor(in string Port, in string brake)
+  ReleaseMotorPID(Port)
+  Motor.Stop(Port, brake)
+EndFunction
+
+Function RunMotorSmart(in string Port, in number Power, in number LimitDeg)
+  ReleaseMotorPID(Port)
+  Motor.ResetCount(Port)
+  Motor.StartPower(Port, Power)
+  Program.Delay(150)
+  StallCounter = 0
+  exit = 0
+  While exit = 0
+    If @StopSignal = 1 Then
+       exit = 1
+    EndIf
+    CurrentDeg = Math.Abs(Motor.GetCount(Port))
+    If CurrentDeg >= LimitDeg Then
+       exit = 1
+    EndIf
+    CurrentSpeed = Math.Abs(Motor.GetSpeed(Port))
+    If CurrentSpeed < 70 Then
+       StallCounter = StallCounter + 1
+    Else
+       StallCounter = 0
+    EndIf
+    If StallCounter > 60 Then
+       exit = 1
+    EndIf
+    Program.Delay(20)
+  EndWhile
+  Motor.Stop(Port, "True")
+EndFunction
+
+Sub _AsyncMotorSub
+  RunMotorSmart(@AsyncPort, @AsyncSpeed, @AsyncDeg)
+EndSub
+
+Function RunMotorAsync(in string Port, in number Power, in number LimitDeg)
+  @AsyncPort = Port
+  @AsyncSpeed = Power
+  @AsyncDeg = LimitDeg
+  Thread.Run = _AsyncMotorSub
+EndFunction
+
+Function MoveSmart(in number DistDeg, in number Spd)
+  Check()
+  Motor.ResetCount("BC")
+  Dir = 1
+  If DistDeg < 0 Then
+    Dir = -1
+  EndIf
+  Target = Math.Abs(DistDeg)
+  StallCounter = 0
+  Motor.StartPower("B", Spd * Dir * @kB)
+  Motor.StartPower("C", Spd * Dir * @kC)
+  Program.Delay(150)
+  exit = 0
+  While exit = 0
+    If @StopSignal = 1 Then
+      exit = 1
+    EndIf
+    EncB = Math.Abs(Motor.GetCount("B"))
+    EncC = Math.Abs(Motor.GetCount("C"))
+    Avg = (EncB + EncC) / 2
+    Error = EncB - EncC
+    Correction = Error * @kp_sync
+    PowB = (Spd - Correction) * Dir * @kB
+    PowC = (Spd + Correction) * Dir * @kC
+    Motor.StartPower("B", PowB)
+    Motor.StartPower("C", PowC)
+    If Avg >= Target Then
+      exit = 1
+    EndIf
+    SpdB = Math.Abs(Motor.GetSpeed("B"))
+    SpdC = Math.Abs(Motor.GetSpeed("C"))
+    If (SpdB + SpdC) / 2 < 5 Then
+      StallCounter = StallCounter + 1
+    Else
+      StallCounter = 0
+    EndIf
+    If StallCounter > 10 Then
+      exit = 1
+    EndIf
+    Program.Delay(10)
+  EndWhile
+  Motor.Stop("BC", "True")
+EndFunction
+
+Function TurnSmart(in number Angle, in number Spd)
+  Check()
+  Motor.ResetCount("BC")
+  TargetMotorDeg = Math.Abs(Angle * @TurnRatio)
+  Dir = 1
+  If Angle < 0 Then
+    Dir = -1
+  EndIf
+  StallCounter = 0
+  Motor.StartPower("B", Spd * Dir * @kB)
+  NegSpd = 0 - Spd
+  Motor.StartPower("C", NegSpd * Dir * @kC)
+  Program.Delay(150)
+  exit = 0
+  While exit = 0
+    If @StopSignal = 1 Then
+      exit = 1
+    EndIf
+    EncB = Math.Abs(Motor.GetCount("B"))
+    EncC = Math.Abs(Motor.GetCount("C"))
+    Avg = (EncB + EncC) / 2
+    Error = EncB - EncC
+    Correction = Error * @kp_sync
+    PowB = (Spd - Correction) * Dir * @kB
+    NegVal = 0 - (Spd + Correction)
+    PowC = NegVal * Dir * @kC
+    Motor.StartPower("B", PowB)
+    Motor.StartPower("C", PowC)
+    If Avg >= TargetMotorDeg Then
+      exit = 1
+    EndIf
+    SpdB = Math.Abs(Motor.GetSpeed("B"))
+    SpdC = Math.Abs(Motor.GetSpeed("C"))
+    If (SpdB + SpdC) / 2 < 5 Then
+      StallCounter = StallCounter + 1
+    Else
+      StallCounter = 0
+    EndIf
+    If StallCounter > 10 Then
+      exit = 1
+    EndIf
+    Program.Delay(10)
+  EndWhile
+  Motor.Stop("BC", "True")
+EndFunction

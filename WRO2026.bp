@@ -1,0 +1,54 @@
+include "Season2026_Main"
+
+MiddleBase()
+
+s1Black = 480
+s1White = 621
+s2Black = 449
+s2White = 622
+s3Black = 398
+s3White = 616
+s4Black = 479
+s4White = 627
+
+InitLine4BW(3, s1Black, s1White, s2Black, s2White, s3Black, s3White, s4Black, s4White)
+SetLineThreshold(50)
+SetMarkThreshold(70)
+SetSeenBlackRange(85, 100)
+SetMarkConfirmLoops(3)
+SetLinePID(30, 0.55, 0.00, 1.20)
+SetLineCombos(4, 2, 2, 3, 1, 4)
+
+MoveSmart(250, 60)
+Stop()
+RunMotorSmart("A", 600, 1000)
+Program.Delay(300)
+MotorHoldPIDTarget("D", 1000, 1.2)
+Program.Delay(400)
+MotorHoldPIDTarget("D", -1000, 1.2)
+Program.Delay(400)
+MotorHoldPIDTarget("D", 1000, 1.2)
+Program.Delay(400)
+MotorHoldPIDTarget("D", -1000, 1.2)
+Program.Delay(400)
+MotorHoldPIDTarget("D", 1000, 1.2)
+Program.Delay(400)
+RunMotorSmart("A", -100, 1000)
+MotorHoldPIDTarget("D", 1000, 1.9)
+Program.Delay(200)
+nazad(50, 200)
+stop()
+SoloL(50, 300)
+stop()
+MoveSmart(500, 70)
+stop()
+SoloR(50, 300)
+stop()
+MoveSmart(150,60)
+stop()
+SoloL(60, 540)
+stop()
+UseCenterPair()
+FollowUntilGrightNear()
+stop()
+
